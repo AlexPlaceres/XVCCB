@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/testFiles/qt_ch02_0030_02_ev000_cut1.ccb
+/testFiles/qt_ch02_0030_02_ev000_cut3.ccb
+/testFiles/qt_ch02_0030_02_ev000_cut4.ccb
+/testFiles/qt_ch02_0030_02_ev000_cut5.ccb

@@ -1,10 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using XVCCB.Data.Binary;
-using XVCCB.Serialization;
+﻿using XVCCB.Data.Binary;
 using XVCCB.Utilities;
-using System.Numerics;
 
 
 namespace XVCCB.Data;
@@ -41,20 +36,9 @@ public class MTBCurve
             {
                 FrameFields[i] = new FrameBit();
                 FrameFields[i].Read(reader);
-                //Console.WriteLine("\t\tCounted Frame Field");
-
             }
 
             GetActiveFrames(FrameFields, reader);
-
-            Console.WriteLine("\t\t Transforms:");
-            Transforms = new float[TotalFrames];
-            for (int i = 0; i < TotalFrames; i++)
-            {
-                Transforms[i] = reader.ReadSingle();
-                Console.WriteLine("\t\t  {0}", Transforms[i]);
-            }
-
 
         }
 
@@ -63,7 +47,6 @@ public class MTBCurve
 
     public void GetActiveFrames(FrameBit[] Fields, BinaryReader reader)
     {
-        uint total = 0;
 
         uint keyFrameIndex = 0;
 
@@ -97,7 +80,6 @@ public class MTBCurve
             Console.WriteLine("\t\t  Frame {0,2} = {1,10:0.0000000}", key, KeyFrames[key]);
         }
 
-        return total;
     }
 
 }
@@ -111,27 +93,55 @@ public class MTBNodeHeader
     public ushort Flags {  get; set; }
     public MTBCurve[] Curves { get; set; }
 
+    public string Name { get; set; }
+
     public void Read(BinaryReader reader)
     { 
         FullNameId = reader.ReadUInt32();
         NameId = reader.ReadUInt32();
+
+        Name = ReadNodeName(reader);
+
+        Console.WriteLine("\t     Node: {0}", Name);
+
         JointLength = reader.ReadSingle();
         CurveCount = reader.ReadUInt16();
         Flags = reader.ReadUInt16();
-        Console.WriteLine("\t\tNumber of Curves: {0}", CurveCount);
+        
 
-        Console.WriteLine("\t\t Curves:");
-        int i = 0;
-        int testVal = CurveCount;
-        Curves = new MTBCurve[testVal];
-        while (i < testVal)
+        Curves = new MTBCurve[CurveCount];
+
+        if (CurveCount > 0)
         {
-            Console.WriteLine("\t\tCurve {0}", i + 1);
-            Curves[i] = new MTBCurve();
-            Curves[i].Read(reader);
+            Console.WriteLine("\t\tNumber of Curves: {0}", CurveCount);
 
-            i += 1;
+            for (int i = 0; i < CurveCount; i++)
+            {
+                Console.WriteLine("\t\tCurve {0}", i);
+                Curves[i] = new MTBCurve();
+                Curves[i].Read(reader);
+            }
         }
+        else
+        {
+            Console.WriteLine("\t\tNo Curves");
+            Console.WriteLine("\n");
+        }
+
+
+        
+    }
+
+    private string ReadNodeName(BinaryReader reader)
+    {
+        long returnPoint = reader.BaseStream.Position;
+        reader.BaseStream.Position = (returnPoint - 4) + ((long)(NameId & 0x00FFFFFF));
+
+        string result = reader.ReadNullTerminatedString();
+
+        reader.BaseStream.Position = returnPoint;
+
+        return result;
     }
 
 }
@@ -169,26 +179,24 @@ public class MotionTrackBinary
     public SectionDataBinary File_Header { get; set; } = new();
     public MTBDataHeader Data_Header { get; set; } = new();
     public MTBNodeHeader[] Nodes {  get; set; }
+    public long StartingPoint {  get; set; }
 
     public void Read(BinaryReader reader)
     {
         Console.WriteLine("Motion Track Binary:");
+        StartingPoint = reader.BaseStream.Position;
 
         camMtbHeader.Read(reader);
         File_Header.Read(reader);
         Data_Header.Read(reader);
 
         Console.WriteLine("Nodes:");
-        int TestValue = Data_Header.CurveNodeCount;
-        Nodes = new MTBNodeHeader[TestValue];
-        int i = 0;
-        while (i < TestValue)
+        Nodes = new MTBNodeHeader[Data_Header.CurveNodeCount];
+        for (int i = 0; i < Nodes.Length; i++)
         {
-            Console.WriteLine("\tNode {0}", i + 1);
+            Console.WriteLine("\t   Node {0}", i + 1);
             Nodes[i] = new MTBNodeHeader();
             Nodes[i].Read(reader);
-
-            i += 1;
         }
 
     }

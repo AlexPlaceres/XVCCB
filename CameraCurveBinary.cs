@@ -13,6 +13,7 @@ public class CameraCurveBinary : BinaryReaderWriterBase
     public CameraFileHeader CamFileHeader { get; set; } = new();
     public CameraCommonHeader CamComHeader { get; set; } = new();
     public MotionTrackBinary MotTrackBin { get; set; } = new();
+    public CameraPart CamPart { get; set; } = new();
 
     public override void Read(Stream stream)
     {
@@ -22,6 +23,9 @@ public class CameraCurveBinary : BinaryReaderWriterBase
         CamFileHeader.Read(reader);
         CamComHeader.Read(reader);
         MotTrackBin.Read(reader);
+
+        reader.BaseStream.Position = MotTrackBin.StartingPoint + MotTrackBin.camMtbHeader.Size;
+        CamPart.Read(reader);
     }
 
     public void Read(BinaryReader reader)

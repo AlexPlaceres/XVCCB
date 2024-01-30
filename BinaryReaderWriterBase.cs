@@ -12,12 +12,30 @@ public class BinaryReaderWriterBase
     }
 
     public void Read(string filePath)
-    { 
+    {
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         Read(stream);
     }
 
     public virtual void Read(Stream stream)
+    {
+        throw new NotImplementedException("This method should not be called from the base class");
+    }
+
+    public byte[] Write()
+    {
+        using var stream = new MemoryStream();
+        Write(stream);
+        return stream.ToArray();
+    }
+
+    public void Write(string filePath)
+    { 
+        using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+        Write(stream);
+    }
+
+    public virtual void Write(Stream stream)
     {
         throw new NotImplementedException("This method should not be called from the base class");
     }

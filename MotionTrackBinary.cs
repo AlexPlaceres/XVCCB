@@ -16,7 +16,7 @@ public class MTBCurve
     public ushort NumFrameBits {  get; set; }
     public float unknown_2 { get; set; } = 0f;
     public FrameBit[] FrameFields { get; set; }
-    public float[] Transforms { get; set; }
+    public SortedDictionary<uint, float> KeyFrames { get; set; } = new SortedDictionary<uint, float>();
 
     public void Read(BinaryReader reader)
     {
@@ -45,8 +45,7 @@ public class MTBCurve
 
             }
 
-            uint TotalFrames = GetActiveFrames(FrameFields);
-            Console.WriteLine("\t\t Active Frames = {0}", TotalFrames);
+            GetActiveFrames(FrameFields, reader);
 
             Console.WriteLine("\t\t Transforms:");
             Transforms = new float[TotalFrames];
@@ -62,9 +61,11 @@ public class MTBCurve
         Console.WriteLine("\n");
     }
 
-    public uint GetActiveFrames(FrameBit[] Fields)
+    public void GetActiveFrames(FrameBit[] Fields, BinaryReader reader)
     {
         uint total = 0;
+
+        uint keyFrameIndex = 0;
 
         for (int i = 0; i < Fields.Length; i++)
         {
@@ -72,16 +73,29 @@ public class MTBCurve
             {
                 if (((Fields[i].FirstHalf >> j) & 0x1) == 0x1)
                 {
-                    total += 1;
+
+                    KeyFrames.Add((uint)(keyFrameIndex + j), 0.0f);
+
                 }
 
                 if (((Fields[i].SecondHalf >> j) & 0x1) == 0x1)
                 {
-                    total += 1;
+
+                    KeyFrames.Add((uint)(keyFrameIndex + 64 + j), 0.0f);
                 }
             }
+
+            keyFrameIndex += 128;
         }
 
+        Console.WriteLine("\t\t Number of Keyframes = {0}", KeyFrames.Count);
+        Console.WriteLine("\t\t Transforms:");
+        var keys = new List<uint>(KeyFrames.Keys);
+        foreach (uint key in keys)
+        {
+            KeyFrames[key] = reader.ReadSingle();
+            Console.WriteLine("\t\t  Frame {0,2} = {1,10:0.0000000}", key, KeyFrames[key]);
+        }
 
         return total;
     }

@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using XVCCB.Serialization;
+using XVCCB.Utilities;
 
 namespace XVCCB.Data;
 
@@ -29,6 +30,15 @@ public class CameraFileHeader
         Console.WriteLine("\t\t\tCreated by {0} on {1}\n", new string(User), new string(Date));
         
     }
+
+    public void Write(BinaryWriter writer)
+    { 
+        writer.Write(Name);
+        writer.Write(Version);
+        writer.BaseStream.Seek(8, SeekOrigin.Current);
+        writer.Write(User);
+        writer.Write(Date);
+    }
 }
 
 public class CameraCommonHeader
@@ -52,6 +62,16 @@ public class CameraCommonHeader
 
         reader.BaseStream.Seek(16, SeekOrigin.Current);
     }
+
+    public void Write(BinaryWriter writer)
+    {
+        writer.Write(Name);
+        writer.Write(SwitcherIndex);
+        writer.Write(CameraLength);
+        writer.Write(CameraStartFrame);
+        writer.BaseStream.Seek(16, SeekOrigin.Current);
+        
+    }
 }
 
 public class CameraPartHeader
@@ -69,6 +89,13 @@ public class CameraPartHeader
 
         // Skips structure's 9 bytes of padding
         reader.BaseStream.Seek(9, SeekOrigin.Current);
+    }
+
+    public void Write(BinaryWriter writer)
+    {
+        writer.Write(Name);
+        writer.Write(CameraNum);
+        writer.WriteAlignmentPadding(16);
     }
     
 }
@@ -122,6 +149,29 @@ public class CameraPart
         reader.BaseStream.Seek(12, SeekOrigin.Current);
 
     }
+
+    public void Write(BinaryWriter writer)
+    {
+        camPartHeader.Write(writer);
+        writer.Write(Name);
+        writer.Write(ApertureV);
+        writer.Write(ApertureH);
+        writer.Write(Near);
+        writer.Write(Far);
+
+        writer.Write(RootNum);
+        writer.Write(MoveNum);
+        writer.Write(IntNum);
+        writer.WriteAlignmentPadding(4);
+
+        writer.Write(RootAddress);
+        writer.Write(MoveAddress);
+        writer.Write(IntAddress);
+
+        writer.Write(FlenIndex);
+        writer.Write(RolIndex);
+        writer.WriteAlignmentPadding(16);
+    }
 }
 
 public class CameraMtbHeader
@@ -141,6 +191,15 @@ public class CameraMtbHeader
         Size = reader.ReadInt32();
 
         Console.WriteLine("{0}, MTB Size = {1} Bytes, Size = {2} Bytes", new string(Name), MtbSize, Size);
+    }
+
+    public void Write(BinaryWriter writer)
+    { 
+        writer.Write(Name);
+        writer.BaseStream.Seek(2, SeekOrigin.Current);
+
+        writer.Write(MtbSize);
+        writer.Write(Size);
     }
 }
 

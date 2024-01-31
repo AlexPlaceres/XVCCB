@@ -45,7 +45,7 @@ public class MTBCurve
         Console.WriteLine("\n");
     }
 
-    public void GetActiveFrames(FrameBit[] Fields, BinaryReader reader)
+    private void GetActiveFrames(FrameBit[] Fields, BinaryReader reader)
     {
 
         uint keyFrameIndex = 0;
@@ -71,6 +71,7 @@ public class MTBCurve
             keyFrameIndex += 128;
         }
 
+
         Console.WriteLine("\t\t Number of Keyframes = {0}", KeyFrames.Count);
         Console.WriteLine("\t\t Transforms:");
         var keys = new List<uint>(KeyFrames.Keys);
@@ -82,6 +83,58 @@ public class MTBCurve
 
     }
 
+    public void Write(BinaryWriter writer, float frameCount)
+    {
+        writer.Write((uint)CurveId);
+        writer.Write(unknown_0);
+        writer.Write(NumFrameBits);
+
+        if (NumFrameBits <= 0)
+        { 
+            writer.Write(unknown_2);
+        }
+        else
+        {
+            writer.WriteAlignmentPadding(16);
+
+            WriteKeyFrames(writer, frameCount);
+
+
+
+
+            foreach (KeyValuePair<uint, float> kvp in KeyFrames)
+            {
+                writer.Write(kvp.Value);
+            }
+        }
+    }
+
+    private void WriteKeyFrames(BinaryWriter writer, float frameCount)
+    {
+        uint writtenBits = 0;
+        uint writtenFrames = 0;
+
+        while (writtenFrames < frameCount)
+        {
+            FrameBit frameBitField = new FrameBit();
+            for (uint i = 0; i < 64; i++)
+            {
+                if (KeyFrames.ContainsKey(writtenBits + i))
+                {
+                    frameBitField.FirstHalf |= 0x1UL << (int)i;
+                }
+
+                if (KeyFrames.ContainsKey(writtenBits + 64 + i))
+                {
+                    frameBitField.SecondHalf |= 0x1UL << (int)(i);
+
+                }
+                writtenFrames += 2;
+            }
+            writtenBits += 128;
+            frameBitField.Write(writer);
+        }
+    }
 }
 
 public class MTBNodeHeader
@@ -127,8 +180,6 @@ public class MTBNodeHeader
             Console.WriteLine("\t\tNo Curves");
             Console.WriteLine("\n");
         }
-
-
         
     }
 
@@ -142,6 +193,20 @@ public class MTBNodeHeader
         reader.BaseStream.Position = returnPoint;
 
         return result;
+    }
+
+    public void Write(BinaryWriter writer, float frameCount)
+    {
+        writer.Write(FullNameId);
+        writer.Write(NameId);
+        writer.Write(JointLength);
+        writer.Write(CurveCount);
+        writer.Write(Flags);
+
+        foreach (MTBCurve curve in Curves)
+        {
+            curve.Write(writer, frameCount);
+        }
     }
 
 }
@@ -171,6 +236,16 @@ public class MTBDataHeader
         Offset = reader.ReadUInt32();
     }
 
+    public void Write(BinaryWriter writer)
+    {
+        writer.Write(FrameRate);
+        writer.Write(TotalFrames);
+        writer.Write(CurveNodeCount);
+        writer.Write(PhysicsNodeCount);
+        writer.Write(Status);
+        writer.Write(Offset);
+
+    }
 }
 
 public class MotionTrackBinary
@@ -201,6 +276,23 @@ public class MotionTrackBinary
 
     }
 
+    public void Write(BinaryWriter writer)
+    { 
+        camMtbHeader.Write(writer);
+        File_Header.Write(writer);
+        Data_Header.Write(writer);
 
+        foreach (MTBNodeHeader node in Nodes)
+        {
+            node.Write(writer, Data_Header.TotalFrames);
+        }
+
+        writer.Write(File_Header.StrName.ToCharArray());
+        foreach (MTBNodeHeader node in Nodes)
+        {
+            writer.Write(node.Name.ToCharArray());
+        }
+        writer.WriteAlignmentPadding(16);
+    }
 
 }

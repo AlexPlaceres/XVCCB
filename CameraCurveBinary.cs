@@ -17,7 +17,7 @@ public class CameraCurveBinary : BinaryReaderWriterBase
 
     public override void Read(Stream stream)
     {
-        using var reader = new BinaryReader(stream, Encoding.UTF8, true);
+        using var reader = new BinaryReader(stream, Encoding.ASCII, true);
 
         SecData.Read(reader);
         CamFileHeader.Read(reader);
@@ -28,8 +28,24 @@ public class CameraCurveBinary : BinaryReaderWriterBase
         CamPart.Read(reader);
     }
 
+    public override void Write(Stream stream)
+    {
+        using var writer = new BinaryWriter(stream, Encoding.ASCII, true);
+        SecData.Write(writer);
+        CamFileHeader.Write(writer);
+        CamComHeader.Write(writer);
+        MotTrackBin.Write(writer);
+
+        CamPart.Write(writer);
+    }
+
     public void Read(BinaryReader reader)
     { 
+        throw new NotImplementedException();
+    }
+
+    public void Write(BinaryReader reader)
+    {
         throw new NotImplementedException();
     }
 }

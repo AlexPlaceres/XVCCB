@@ -9,7 +9,9 @@ public static class Program
     static void Main(string[] args)
     {
         string ccbFilePath;
-        ccbFilePath = "C:\\Users\\Mongo\\source\\repos\\XVCCB\\testFiles\\qt_ch02_0030_02_ev000_cut1.ccb";
+        ccbFilePath = "C:\\Users\\Mongo\\source\\repos\\XVCCB\\testFiles\\qt_ch02_0030_02_ev000_cut3.ccb";
+
+        string outputFilePath = "C:\\Users\\Mongo\\source\\repos\\XVCCB\\Output\\";
 
         if (args.Length == 0)
         {
@@ -31,7 +33,13 @@ public static class Program
 
                 CameraCurveBinary ccb = ReadFromBinary(ccbPath);
 
-                Console.WriteLine("Finished!");
+                Console.WriteLine("Reading Finished");
+                Console.WriteLine("\n\n");
+
+                outputFilePath = string.Format($"{outputFilePath}{Path.GetFileNameWithoutExtension(ccbPath)}_output.ccb");
+                Console.WriteLine("Attempting to Write to {0}", outputFilePath);
+
+                WriteToBinary(outputFilePath, ccb);
 
             }
             else
@@ -40,6 +48,8 @@ public static class Program
             }
 
             Console.WriteLine("\n\n");
+
+            
         }
 
         Console.WriteLine("Press any key to exit");
@@ -56,6 +66,14 @@ public static class Program
         }
 
         return cameraCurveBinary;
+    }
+
+    public static void WriteToBinary(string path, CameraCurveBinary camCurveBin)
+    {
+        using (FileStream stream = new FileStream(path, FileMode.Create))
+        { 
+            camCurveBin.Write(stream);
+        }
     }
 }
 

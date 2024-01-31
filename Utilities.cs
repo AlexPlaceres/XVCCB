@@ -46,17 +46,42 @@ public static class ParseExtensions
         return new string(charStr);
 
     }
+
+    public static void WriteAlignmentPadding(this BinaryWriter writer, uint BlockSize)
+    {
+        long alignmentPaddingSize = 0;
+        long offset = writer.BaseStream.Position;
+        alignmentPaddingSize = BlockSize + (BlockSize * (offset / BlockSize)) - offset;
+
+        if (alignmentPaddingSize > 0 && alignmentPaddingSize < BlockSize)
+        {
+            var padding = new byte[alignmentPaddingSize];
+            foreach (byte b in padding)
+            {
+                padding[b] = 0;
+            }
+
+            writer.Write(padding);
+        }
+
+    }
 }
 
 
 public class FrameBit
 {
-    public ulong FirstHalf {  get; set; }
-    public ulong SecondHalf {  get; set; }
+    public ulong FirstHalf { get; set; } = 0;
+    public ulong SecondHalf { get; set; } = 0;
 
     public void Read(BinaryReader reader)
     {
         FirstHalf = reader.ReadUInt64();
         SecondHalf = reader.ReadUInt64();
+    }
+
+    public void Write(BinaryWriter writer)
+    {
+        writer.Write(FirstHalf);
+        writer.Write(SecondHalf);
     }
 }
